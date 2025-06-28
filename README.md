@@ -6,7 +6,29 @@
 composer require moonshine/twirl
 ```
 
-## Example
+## Quick start
+
+Add Twirl component in your MoonShineLayot
+
+```php
+use MoonShine\Twirl\Components\Twirl;
+
+Twirl::make(),
+```
+
+Now you can trigger the event and update your component
+
+```php
+use MoonShine\Twirl\Events\TwirlEvent;
+
+TwirlEvent::dispatch(
+    selector: '.your-selector' . $id,
+    (string) Badge::make(),
+    HtmlReloadAction::OUTER_HTML
+);
+```
+
+## Settings for Centrifugo
 Centrifugo backend example
 
 ```php
@@ -37,6 +59,11 @@ final class Centrifugo implements TwirlBroadcastContract
         }
     }
 }
+```
+
+Add into provider
+```php
+$this->app->bind(TwirlBroadcastContract::class, Centrifugo::class);
 ```
 
 Centrifugo frontend ts example
