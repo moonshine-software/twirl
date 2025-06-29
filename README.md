@@ -1,5 +1,17 @@
 # Twirl - WebSocket component for MoonShine
 
+**Twirl** is a lightweight, free component for integrating WebSocket updates into the MoonShine admin panel. It allows you to quickly implement real-time dynamic updates of interface elements using Centrifugo or other WebSocket servers.
+
+**Twirl features:**
+
+- Simple HTML component updates on events
+- Easy integration with MoonShine and Centrifugo
+- Minimal dependencies, maximum speed to launch
+
+Twirl is ideal for basic scenarios of dynamic interface updates.
+For advanced features—notifications, collaborative form editing, fragment updates, and integration with various WebSocket providers—use the full [Rush package](https://moonshine-laravel.com/plugins/rush).
+
+
 ## Install
 
 ```bash
