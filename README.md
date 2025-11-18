@@ -11,6 +11,9 @@
 Twirl is ideal for basic scenarios of dynamic interface updates.
 For advanced features—notifications, collaborative form editing, fragment updates, and integration with various WebSocket providers—use the full [Rush package](https://moonshine-laravel.com/plugins/rush).
 
+## Requirements
+
+- MoonShine 3.0+
 
 ## Install
 
@@ -18,9 +21,14 @@ For advanced features—notifications, collaborative form editing, fragment upda
 composer require moonshine/twirl
 ```
 
+Publish the resources and configuration:
+```bash
+php artisan vendor:publish --provider="Moonshine\Twirl\Providers\TwirlServiceProvider"
+```
+
 ## Quick start
 
-Add Twirl component in your MoonShineLayot
+Add Twirl component in your MoonShineLayout or page:
 
 ```php
 use MoonShine\Twirl\Components\Twirl;
@@ -28,24 +36,42 @@ use MoonShine\Twirl\Components\Twirl;
 Twirl::make(),
 ```
 
-Now you can trigger the event and update your component
+Now you can trigger the event and update your component:
 
 ```php
 use MoonShine\Twirl\Events\TwirlEvent;
 
 TwirlEvent::dispatch(
-    selector: '#test',
-    html: (string) Badge::make('Twirl!', Color::GREEN),
-    action: HtmlReloadAction::OUTER_HTML
+    selector: '.your-selector' . $id,
+    (string) Badge::make(),
+    HtmlReloadAction::OUTER_HTML
 );
 ```
 
-## Settings for Centrifugo
+**Twirl** is a thin wrapper around updating HTML elements and a convenient interface to plug into any WebSocket transport. **It does not run or configure WebSocket connections for you.**
+
+You need make the bridge between Twirl and your WebSocket stack  by yourself:
+- Backend: implement and bind your own broadcaster via `TwirlBroadcastContract` for any provider (Centrifugo, Pusher, Socket.IO, custom, etc.).
+- Frontend: subscribe to your channels with your client and pass incoming payloads to `onTwirl` so Twirl can apply HTML updates.
+
+Quick checklist:
+- Implement `TwirlBroadcastContract` for your transport.
+- Bind it in the container.
+- On the frontend, set up subscriptions and forward publications to `onTwirl()` callback.
+
+### Example for Centrifugo
 
 > [!CAUTION]
 > All examples are insecure and serve only for development
 
-Centrifugo backend example
+Install library for work with Centrifugo:
+```bash
+composer require centrifugal/phpcent:~6.0
+```
+
+Up the Centrifugo instance and make some configs in your app (host, api-key, jwt-secret...).
+
+Then implement `TwirlBroadcastContract` with connection to Centrifugo:
 
 ```php
 <?php
@@ -77,15 +103,16 @@ final class Centrifugo implements TwirlBroadcastContract
 }
 ```
 
-Add into provider
+Add into provider:
 ```php
 $this->app->bind(TwirlBroadcastContract::class, Centrifugo::class);
 ```
 
-Centrifugo frontend ts example. First, install the package:
+Write frontend logic for connect Centrifugo with Twirl. First, install the package:
 ```shell
 npm install centrifuge
 ```
+
 Example:
 ```ts
 import { Centrifuge, PublicationContext } from "centrifuge";
