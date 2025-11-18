@@ -34,13 +34,17 @@ Now you can trigger the event and update your component
 use MoonShine\Twirl\Events\TwirlEvent;
 
 TwirlEvent::dispatch(
-    selector: '.your-selector' . $id,
-    (string) Badge::make(),
-    HtmlReloadAction::OUTER_HTML
+    selector: '#test',
+    html: (string) Badge::make('Twirl!', Color::GREEN),
+    action: HtmlReloadAction::OUTER_HTML
 );
 ```
 
 ## Settings for Centrifugo
+
+> [!CAUTION]
+> All examples are insecure and serve only for development
+
 Centrifugo backend example
 
 ```php
@@ -78,7 +82,11 @@ Add into provider
 $this->app->bind(TwirlBroadcastContract::class, Centrifugo::class);
 ```
 
-Centrifugo frontend ts example
+Centrifugo frontend ts example. First, install the package:
+```shell
+npm install centrifuge
+```
+Example:
 ```ts
 import { Centrifuge, PublicationContext } from "centrifuge";
 import axios from "axios";
@@ -103,10 +111,9 @@ document.addEventListener("moonshine:init", async () => {
         return;
     }
 
-    let token = await getOrCreateToken();
+    let token = await getToken();
 
-    const wsUrl = getWsURL()
-    const centrifuge = new Centrifuge(wsUrl, {
+    const centrifuge = new Centrifuge("ws://localhost:8000/connection/websocket", {
         token: token
     });
 
@@ -129,4 +136,66 @@ document.addEventListener("moonshine:init", async () => {
             .subscribe()
     });
 });
+
+async function getToken(): Promise<string> {
+    // Your endpoint to get a token
+    const response = await axios.post('/centrifugo/token')
+
+    return response.data.token;
+}
+```
+
+CentrifugoController example:
+```php
+use MoonShine\Laravel\Http\Controllers\MoonShineController;
+use phpcent\Client;
+
+class CentrifugoController extends MoonShineController
+{
+    public function index()
+    {
+        $client = new Client(
+            url: 'http://centrifugo-url:8000/api',
+            apikey: '...',
+            secret: '...'
+        );
+
+        return response()->json([
+            'token' => $client->generateConnectionToken($this->auth()->user()->id, channels: [
+                'twirl-channel'
+            ]),
+        ]);
+    }
+}
+```
+
+Centrifugo config example:
+```json
+{
+    "client": {
+        "token": {
+            "hmac_secret_key": "bbe7d157-a253-4094-9759-06a8236543f9"
+        },
+        "allowed_origins": ["*"]
+    },
+    "http_api": {
+        "key": "d7627bb6-2292-4911-82e1-615c0ed3eebb"
+    },
+    "channel": {
+        "without_namespace": {
+            "allow_subscribe_for_client": true,
+            "allow_publish_for_client": true
+        },
+        "namespaces": [
+            {
+                "name": "twirl-channel"
+            }
+        ]
+    },
+    "admin": {
+        "enabled": true,
+        "password": "12345",
+        "secret": "12345"
+    }
+}
 ```
